@@ -22,16 +22,27 @@ const ProductDetails = () => {
 
     const { productId } = useParams();
 
-    // here the 'id' received has 'string-type', so converting it to a 'Number'
-    const prodId = parseInt(productId);
+    const product = product_data.find(item => item.id === productId) || {}; // ✅ Always ensure product is an object
 
-    // showing the Product based on the received 'id'
-    const product = product_data.find(item => item.id === prodId);
+    const [previewImg, setPreviewImg] = useState(product.images?.[0] || '');
+    
+    useEffect(() => {
+        if (product.images?.length) {
+            setPreviewImg(product.images[0]);
+            handleActive(0);
+        setPreviewImg(images[0]);
 
-    const { images, name, description, category, prices, ratings, rateCount } = product;
-
-    const [previewImg, setPreviewImg] = useState(images.length > 0 ? images[0] : '');
-
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [product.images]); // ✅ Using `product.images` directly instead of re-setting `images`
+    
+    // ✅ Conditional return AFTER all hooks execute
+    if (!product.id) {
+        return <h2>Product not found</h2>;
+    }
+    
+    const { images = [], name, description, category, prices = [], ratings, rateCount } = product;
+    
 
     // handling Add-to-cart
     const handleAddItem = () => {
@@ -39,14 +50,7 @@ const ProductDetails = () => {
     };
 
 
-    // setting the very-first image on re-render
-    useEffect(() => {
-
-        setPreviewImg(images[0]);
-        handleActive(0);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [images]);
-
+  
 
     // handling Preview image
     const handlePreviewImg = (i) => {

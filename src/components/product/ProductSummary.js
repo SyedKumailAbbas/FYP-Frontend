@@ -4,15 +4,14 @@ import useActive from '../../hooks/useActive';
 import ProductReviews from './ProductReviews';
 
 const ProductSummary = (props) => {
-    const { brand, name, description, category } = props;
+    const { brand, name, description, category,prices,urls } = props;
     const { active, handleActive, activeClass } = useActive('price');
 
-    // Table Data
-    const data = [
-        { col1: "Website 1 ", col2: "1299", col3: "link" },
-        { col1: "Website 2", col2: "1400", col3: "link" },
-        { col1: "Website 3", col2: "1500", col3: "link" },
-    ];
+    const data = urls.map((u, index) => ({
+        col1: u.websiteName,        // Website name from 'websiteName' array
+        col2: prices[index],      // Corresponding price from 'prices' array
+        col3: u.url,    // Corresponding URL from 'urls' array
+    }));
 
     return (
         <section id="product_summary" className="section">
@@ -36,17 +35,17 @@ const ProductSummary = (props) => {
                             <ul className="w-full border border-gray-300">
                                 {/* Table Header */}
                                 <li className="flex font-semibold bg-gray-800 text-white p-3">
-                                    <span className="w-1/3">Name</span>
-                                    <span className="w-1/3">Price </span>
-                                    <span className="w-1/3">Website link</span>
+                                    <span className="flex-grow">Name</span>
+                                    <span className="flex-grow">Price </span>
+                                    <span className="flex-grow">Website link</span>
                                 </li>
 
                                 {/* Dynamic Table Rows */}
                                 {data.map((row, index) => (
                                     <li key={index} className="flex p-3 border-b">
-                                        <span className="w-1/3">{row.col1}</span>
-                                        <span className="w-1/3">{row.col2}</span>
-                                        <span className="w-1/3">{row.col3}</span>
+                                        <span className="flex-grow">{row.col1}</span>
+                                        <span className="flex-grow">{row.col2}</span>
+                                        <span className="flex-grow">{row.col3}</span>
                                     </li>
                                 ))}
                             </ul>

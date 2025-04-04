@@ -108,6 +108,7 @@ const AccountForm = () => {
                                     <button
                                         type="submit"
                                         className="btn login_btn"
+                                        value={isSignupVisible ? 'Signup' : 'Login'}
                                     >
                                         {isSignupVisible ? 'Signup' : 'Login'}
                                     </button>
