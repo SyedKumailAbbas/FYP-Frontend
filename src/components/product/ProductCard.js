@@ -1,20 +1,30 @@
-import React, { useContext } from 'react';
+import React, { useContext } from 'react'; // Ensure you import useContext
 import { IoMdStar } from 'react-icons/io';
 import { Link } from 'react-router-dom';
 import { displayMoney } from '../../helpers/utils';
 import cartContext from '../../contexts/cart/cartContext';
 import useActive from '../../hooks/useActive';
 
-
 const ProductCard = (props) => {
+    // Log props to check if data is passed correctly
+    console.log("ProductCard props:", props);
 
+    // Destructure the props object
     const { id, images, name, description, prices, originalPrice, rateCount, path } = props;
 
-    const { addItem } = useContext(cartContext);
+    // Check if each prop has the correct data
+    console.log("Product ID:", id);
+    console.log("Product Images:", images);
+    console.log("Product Name:", name);
+    console.log("Product Description:", description);
+    console.log("Product Prices:", prices);
+    console.log("Product Original Price:", originalPrice);
+    console.log("Product Rate Count:", rateCount);
+
+    const { addItem } = useContext(cartContext); // Ensure useContext is used correctly
     const { active, handleActive, activeClass } = useActive(false);
 
-
-    // handling Add-to-cart
+    // Handling Add-to-cart
     const handleAddItem = () => {
         const item = { ...props };
         addItem(item);
@@ -25,9 +35,8 @@ const ProductCard = (props) => {
             handleActive(false);
         }, 3000);
     };
+
     const newPrice = prices && prices.length > 0 ? displayMoney(prices[0]) : "N/A";
-
-
 
     return (
         <>
@@ -49,9 +58,7 @@ const ProductCard = (props) => {
                             Starting From
                         </h6>
                         {newPrice} &nbsp;
-
                     </h2>
-                   
                 </div>
             </div>
         </>

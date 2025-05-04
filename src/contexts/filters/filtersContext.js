@@ -1,5 +1,5 @@
+import axios from 'axios';
 import { createContext, useEffect, useReducer } from 'react';
-import product_data from '../../data/product';
 import { brandsMenu, categoryMenu } from '../../data/filterBarData';
 import filtersReducer from './filtersReducer';
 
@@ -9,6 +9,7 @@ const filtersContext = createContext();
 // Initial State
 const initialState = {
     allProducts: [],
+    loading: true, // Start with loading as true
     sortedValue: null,
     updatedBrandsMenu: brandsMenu,
     updatedCategoryMenu: categoryMenu,
@@ -25,32 +26,76 @@ const initialState = {
 
 // Filters-Provider Component
 const FiltersProvider = ({ children }) => {
-
     const [state, dispatch] = useReducer(filtersReducer, initialState);
+
+    const apiUrl = process.env.REACT_APP_API_URI;
+
+    // Function to fetch products
+    const fetchProducts = async () => {
+        try {
+            // Axios request to fetch products from the backend
+            const response = await axios.get(`${apiUrl}/product/products`);
+            const data = response.data;
+
+            console.log("Fetched Data:", data); // Check if data is fetched correctly
+
+            if (data && Array.isArray(data.data)) { // Ensure we're accessing the correct part of the response
+                const products = data.data.map(item => ({
+                    id: item._id,  // Renaming _id to id
+                    name: item.name,
+                    category: item.category,
+                    brand: item.specifications.brand,
+                    prices: item.prices || [],  // Ensure prices is always an array
+                    finalPrice: Math.min(...(item.prices || [0])),  // Calculate finalPrice from the prices array
+                    urls: item.urls.map(url => ({
+                        websiteName: url.websiteName,
+                        url: url.url,
+                        lastUpdated: url.lastUpdated,
+                    })) || [],
+                    images: item.images || [],  // Ensure images is an array
+                    description: item.description || "",  // Default to an empty string if missing
+                    specifications: item.specifications || {},
+                    createdAt: item.createdAt || "",
+                    updatedAt: item.updatedAt || "",
+                }));
+
+                const priceArr = products.map(item => item.finalPrice);
+                const minPrice = Math.min(...priceArr);
+                const maxPrice = Math.max(...priceArr);
+
+                console.log("Transformed Products:", products); // Log transformed data
+
+                // Dispatch the action to load products into the state
+                dispatch({
+                    type: 'LOAD_ALL_PRODUCTS',
+                    payload: { products, minPrice, maxPrice }
+                });
+
+                // Dispatch SET_LOADING to set loading to false
+                dispatch({
+                    type: 'SET_LOADING',
+                    payload: { loading: false } // Set loading to false here
+                });
+            }
+        } catch (error) {
+            // Handle error gracefully
+            console.error("Error fetching products:", error.response ? error.response.data : error.message);
+            // Set loading to false in case of an error
+            dispatch({
+                type: 'SET_LOADING',
+                payload: { loading: false }
+            });
+        }
+    };
 
     /* Loading All Products on the initial render */
     useEffect(() => {
-        // Create a new array with finalPrice set to the lowest value from the prices array
-        const products = product_data.map(item => ({
-            ...item,
-            finalPrice: Math.min(...item.prices) // Assigning lowest price
-        }));
-
-        // Finding the Min and Max Price from the updated list
-        const priceArr = products.map(item => item.finalPrice);
-        const minPrice = Math.min(...priceArr);
-        const maxPrice = Math.max(...priceArr);
-
-        dispatch({
-            type: 'LOAD_ALL_PRODUCTS',
-            payload: { products, minPrice, maxPrice }
-        });
-
-    }, []);
+        fetchProducts();
+    }, [apiUrl]);  // Ensure fetch runs only once
 
     /* function for applying Filters - (sorting & filtering) */
     const applyFilters = () => {
-        let updatedProducts = product_data.map(item => ({
+        let updatedProducts = state.allProducts.map(item => ({
             ...item,
             finalPrice: Math.min(...item.prices) // Ensure finalPrice is always set correctly
         }));
@@ -91,8 +136,12 @@ const FiltersProvider = ({ children }) => {
             .map(item => item.label.toLowerCase());
 
         if (checkedBrandItems.length) {
-            updatedProducts = updatedProducts.filter(item => checkedBrandItems.includes(item.brand.toLowerCase()));
-        }
+
+            updatedProducts = updatedProducts.filter(item => {
+                // Check if item.specifications.brand is defined and not empty
+                const brand = item.specifications.brand ? item.specifications.brand.toLowerCase() : '';
+                return checkedBrandItems.includes(brand);
+            });        }
 
         // Filter by Category
         const checkedCategoryItems = state.updatedCategoryMenu
@@ -179,6 +228,7 @@ const FiltersProvider = ({ children }) => {
         handleMobSortVisibility,
         handleMobFilterVisibility,
         handleClearFilters,
+        fetchProducts, // Make sure to include fetchProducts in context
     };
 
     return (

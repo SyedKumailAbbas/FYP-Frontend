@@ -1,45 +1,101 @@
-import * as d3 from "d3";
+import React from 'react';
+import { Line } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
 
-export default function LinePlot({
-  data,
-  width = 640,
-  height = 400,
-  marginTop = 20,
-  marginRight = 20,
-  marginBottom = 20,
-  marginLeft = 40
-}) {
-  // X scale maps index positions to pixel positions
-  const x = d3.scaleLinear()
-    .domain([0, data.length - 1])
-    .range([marginLeft, width - marginRight]);
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend
+);
 
-  // Y scale maps data values to pixel positions
-  const y = d3.scaleLinear()
-    .domain(d3.extent(data)) // Automatically finds min/max of data
-    .range([height - marginBottom, marginTop]);
+const Graph = () => {
+  const prices1 = [150, 200, 170, 220, 190, 230];
+  const prices2 = [230, 250, 260, 230, 280, 290, 300];
 
-  // D3 line generator
-  const line = d3.line()
-    .x((d, i) => x(i))
-    .y(d => y(d));
+  const labels = [
+    'January', 'February', 'March', 'April', 'May', 'June',
+    'July', 'August', 'September', 'October', 'November', 'December'
+  ];
 
-  return (
-    <svg width={width} height={height}>
-      {/* Line path */}
-      <path 
-        d={line(data)} 
-        fill="none" 
-        stroke="currentColor" 
-        strokeWidth="1.5" 
-      />
+  const data = {
+    labels,
+    datasets: [
+      {
+        label: 'Actual Price',
+        data: [...prices1, null, null, null, null, null],
+        borderColor: 'blue',
+        fill: false,
+        tension: 0.4,
+      },
+      {
+        label: 'Projected Price',
+        data: [null, null, null, null, null, ...prices2],
+        borderColor: 'red',
+        borderDash: [5, 5],
+        fill: false,
+        tension: 0.4,
+      },
+    ],
+  };
 
-      {/* Data points as circles */}
-      <g fill="white" stroke="currentColor" strokeWidth="1.5">
-        {data.map((d, i) => (
-          <circle key={i} cx={x(i)} cy={y(d)} r="3" />
-        ))}
-      </g>
-    </svg>
-  );
-}
+  const options = {
+    responsive: true,
+    animation: {
+      tension: {
+        duration: 2000,
+        easing: 'linear',
+        from: 1,
+        to: 0,
+        loop: false
+      },
+      x: {
+        duration: 4000,
+        easing: 'linear',
+      },
+      y: {
+        duration: 0, // y axis fixed immediately
+      }
+    },
+    plugins: {
+      legend: {
+        position: 'top',
+      },
+      title: {
+        display: true,
+        text: 'Monthly Sales Data',
+      },
+    },
+    elements: {
+      line: {
+        tension: 0.4,
+      },
+      point: {
+        radius: 0, // no dots during draw
+        hoverRadius: 5,
+      },
+    },
+    hover: {
+      mode: 'nearest',
+      intersect: true,
+      animationDuration: 0, // no hover re-draw
+    },
+    responsiveAnimationDuration: 0,
+  };
+
+  return <Line data={data} options={options} />;
+};
+
+export default Graph;

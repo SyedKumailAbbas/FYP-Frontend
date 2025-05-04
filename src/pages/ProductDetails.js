@@ -10,6 +10,7 @@ import SectionsHead from '../components/common/SectionsHead';
 import RelatedSlider from '../components/sliders/RelatedSlider';
 import ProductSummary from '../components/product/ProductSummary';
 import Services from '../components/common/Services';
+import Graph from '../components/product/Graph';
 
 const ProductDetails = () => {
 
@@ -110,6 +111,8 @@ const ProductDetails = () => {
                                     <li>No Cost EMI on Credit Card</li>
                                     <li>Pay Later & Avail Cashback</li>
                                 </ul> */}
+                                <Graph/>
+
                             </div>
 
                           

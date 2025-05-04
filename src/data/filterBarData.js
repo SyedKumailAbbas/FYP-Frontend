@@ -14,17 +14,17 @@ export const sortMenu = [
 export const brandsMenu = [
     {
         id: 1,
-        label: "JBL",
+        label: "Dell",
         checked: false,
     },
     {
         id: 2,
-        label: "BoAt",
+        label: "hp",
         checked: false,
     },
     {
         id: 3,
-        label: "Sony",
+        label: "acer",
         checked: false,
     },
 ];

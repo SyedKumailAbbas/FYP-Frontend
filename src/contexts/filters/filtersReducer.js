@@ -2,7 +2,6 @@ const filtersReducer = (state, action) => {
     switch (action.type) {
 
         case 'LOAD_ALL_PRODUCTS':
-
             const { products, minPrice, maxPrice } = action.payload;
 
             return {
@@ -13,16 +12,21 @@ const filtersReducer = (state, action) => {
                     price: maxPrice,
                     minPrice: minPrice,
                     maxPrice,
-                }
+                },
+                loading: false,  // Set loading to false when products are loaded
             };
 
+        case 'SET_LOADING':
+            return {
+                ...state,
+                loading: action.payload.loading,  // Set loading to the action's payload value
+            };
 
         case 'SET_SORTED_VALUE':
             return {
                 ...state,
                 sortedValue: action.payload.sortValue
             };
-
 
         case 'CHECK_BRANDS_MENU':
             return {
@@ -39,7 +43,6 @@ const filtersReducer = (state, action) => {
                 })
             };
 
-
         case 'CHECK_CATEGORY_MENU':
             return {
                 ...state,
@@ -55,7 +58,6 @@ const filtersReducer = (state, action) => {
                 })
             };
 
-
         case 'HANDLE_PRICE':
             return {
                 ...state,
@@ -65,13 +67,11 @@ const filtersReducer = (state, action) => {
                 }
             };
 
-
         case 'FILTERED_PRODUCTS':
             return {
                 ...state,
                 allProducts: action.payload.updatedProducts,
             };
-
 
         case 'MOB_SORT_VISIBILITY':
             return {
@@ -82,7 +82,6 @@ const filtersReducer = (state, action) => {
                 }
             };
 
-
         case 'MOB_FILTER_VISIBILITY':
             return {
                 ...state,
@@ -92,13 +91,11 @@ const filtersReducer = (state, action) => {
                 }
             };
 
-
         case 'CLEAR_FILTERS':
             return {
                 ...state,
                 sortedValue: null,
             };
-
 
         default:
             return state;
