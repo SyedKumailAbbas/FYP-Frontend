@@ -4,11 +4,11 @@ import commonContext from '../../contexts/common/commonContext';
 import useForm from '../../hooks/useForm';
 import useOutsideClose from '../../hooks/useOutsideClose';
 import useScrollDisable from '../../hooks/useScrollDisable';
-
+import {createNewUser, logIn} from '../../firebase/auth'
 const AccountForm = () => {
 
     const { isFormOpen, toggleForm } = useContext(commonContext);
-    const { inputValues, handleInputValues, handleFormSubmit } = useForm();
+    const { inputValues, handleInputValues } = useForm();
 
     const formRef = useRef();
 
@@ -19,6 +19,7 @@ const AccountForm = () => {
     useScrollDisable(isFormOpen);
 
     const [isSignupVisible, setIsSignupVisible] = useState(false);
+    const [loading, setLoading] = useState(false);
 
 
     // Signup-form visibility toggling
@@ -27,6 +28,40 @@ const AccountForm = () => {
     };
 
 
+    const handleFormSubmit = async (e) => {
+        e.preventDefault();
+        const { mail, password, username, conf_password } = inputValues;
+    
+        setLoading(true); // ⏳ start loading
+    
+        try {
+            if (isSignupVisible) {
+                if (password !== conf_password) {
+                    alert("Passwords do not match!");
+                    return;
+                }
+    
+                await createNewUser(mail, password, username);
+                alert("Signup successful!");
+                toggleForm(false);
+            } else {
+                await logIn(mail, password);
+                alert("Login successful!");
+                toggleForm(false);
+            }
+    
+            setTimeout(() => {
+                Object.keys(inputValues).forEach(key =>
+                    handleInputValues({ target: { name: key, value: '' } })
+                );
+            }, 300);
+        } catch (error) {
+            alert(error.message);
+        } finally {
+            setLoading(false); // ✅ stop loading
+        }
+    };
+    
     return (
         <>
             {
@@ -105,13 +140,14 @@ const AccountForm = () => {
                                         )
                                     }
 
-                                    <button
-                                        type="submit"
-                                        className="btn login_btn"
-                                        value={isSignupVisible ? 'Signup' : 'Login'}
-                                    >
-                                        {isSignupVisible ? 'Signup' : 'Login'}
-                                    </button>
+<button
+    type="submit"
+    className="btn login_btn"
+    disabled={loading}
+>
+    {loading ? 'Please wait...' : isSignupVisible ? 'Signup' : 'Login'}
+</button>
+
 
                                 </div>
 

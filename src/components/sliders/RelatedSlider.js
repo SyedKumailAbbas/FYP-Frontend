@@ -12,7 +12,7 @@ const RelatedSlider = (props) => {
 
     const { category } = props;
 
-    const relatedProduct = productsData.filter(item => item.category === category);
+    const relatedProduct = productsData.filter(item => item.brand === category);
 
     return (
         <Swiper

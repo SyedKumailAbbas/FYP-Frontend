@@ -6,6 +6,8 @@ import commonContext from '../../contexts/common/commonContext';
 import cartContext from '../../contexts/cart/cartContext';
 import AccountForm from '../form/AccountForm';
 import SearchBar from './SearchBar';
+import { useAuth } from '../../contexts/auth/auth'; 
+import { logOut } from '../../firebase/auth';
 
 
 const Header = () => {
@@ -13,6 +15,7 @@ const Header = () => {
     const { formUserInfo, toggleForm, toggleSearch } = useContext(commonContext);
     const { cartItems } = useContext(cartContext);
     const [isSticky, setIsSticky] = useState(false);
+    const { username, userLoggedIn } = useAuth();
 
 
     // handle the sticky-header
@@ -65,16 +68,26 @@ const Header = () => {
                                 <div className="dropdown_menu">
                                     <h4>Hello! {formUserInfo && <Link to="*">&nbsp;{formUserInfo}</Link>}</h4>
                                     <p>Access account and manage orders</p>
-                                    {
-                                        !formUserInfo && (
-                                            <button
-                                                type="button"
-                                                onClick={() => toggleForm(true)}
-                                            >
-                                                Login / Signup
-                                            </button>
-                                        )
-                                    }
+                                    
+                                   {!userLoggedIn ? (
+                                    <button type="button" onClick={() => toggleForm(true)}>
+                                      Login / Signup
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={async () => {
+                                        try {
+                                          await logOut();
+                                          alert("Logged out successfully!");
+                                        } catch (error) {
+                                          alert("Logout failed: " + error.message);
+                                        }
+                                      }}
+                                    >
+                                      Logout
+                                    </button>
+                                  )}
                                     <div className="separator"></div>
                                     <ul>
                                         {

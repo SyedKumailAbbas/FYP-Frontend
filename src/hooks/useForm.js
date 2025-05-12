@@ -18,17 +18,8 @@ const useForm = () => {
     };
 
     // handling form-submission
-    const handleFormSubmit = (e) => {
-        const loggedUserInfo = inputValues.mail.split('@')[0].toUpperCase();
-        console.log(e)
-        e.preventDefault();
-        setInputValues({});
-        setFormUserInfo(loggedUserInfo);
-        toggleForm(false);
-        alert(`Hello ${loggedUserInfo}, you're successfully logged-in.`);
-    };
-
-    return { inputValues, handleInputValues, handleFormSubmit };
+   
+    return { inputValues, handleInputValues };
 };
 
 export default useForm;

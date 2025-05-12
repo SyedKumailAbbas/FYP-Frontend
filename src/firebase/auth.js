@@ -7,46 +7,47 @@ import {
 import {
     doc, getDoc, setDoc, collection, query, where, getDocs, getFirestore
 } from "firebase/firestore";
-import { auth, db } from "./firebase-config"; // ✅ Ensure proper import
+import { auth, db } from "./firebase-config.js"; // ✅ Ensure proper import
 
 export const createNewUser = async (email, password, username) => {
     try {
-        console.log("Checking if username exists...");
-
+        console.time("Username Check");
         const usernamesRef = collection(db, "users");
         const q = query(usernamesRef, where("username", "==", username));
         const querySnapshot = await getDocs(q);
+        console.timeEnd("Username Check");
 
         if (!querySnapshot.empty) {
             throw new Error("Username already exists. Please choose another one.");
         }
 
-        console.log("Username is unique. Creating user...");
-
+        console.time("Create User");
         const userCredential = await createUserWithEmailAndPassword(auth, email, password);
         const user = userCredential.user;
+        console.timeEnd("Create User");
 
+        console.time("Update Profile");
         await updateProfile(user, { displayName: username });
+        console.timeEnd("Update Profile");
 
-        console.log("Saving user details to Firestore...");
-
+        console.time("Save to Firestore");
         await setDoc(doc(db, "users", user.uid), {
             uid: user.uid,
             email,
             username,
             createdAt: new Date(),
             updatedAt: new Date(),
-            Blogs: [] 
+            Blogs: []
         });
+        console.timeEnd("Save to Firestore");
 
-      
-        
         return user;
     } catch (error) {
         console.error("Error creating user:", error.message);
         throw error;
     }
 };
+
 
 export const logIn = async (email, password) => {
     try {

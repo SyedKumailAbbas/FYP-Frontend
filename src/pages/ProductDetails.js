@@ -1,11 +1,10 @@
 import React, { useContext, useEffect, useState } from 'react';
-import { Link, useParams } from 'react-router-dom';
-import { IoMdStar, IoMdCheckmark } from 'react-icons/io';
+import { useParams } from 'react-router-dom';
 import { calculateDiscount, displayMoney } from '../helpers/utils';
 import useDocTitle from '../hooks/useDocTitle';
 import useActive from '../hooks/useActive';
 import cartContext from '../contexts/cart/cartContext';
-import product_data from '../data/product';
+import axios from 'axios'; // Import axios
 import SectionsHead from '../components/common/SectionsHead';
 import RelatedSlider from '../components/sliders/RelatedSlider';
 import ProductSummary from '../components/product/ProductSummary';
@@ -15,58 +14,65 @@ import Graph from '../components/product/Graph';
 const ProductDetails = () => {
 
     useDocTitle('Product Details');
-
   
     const { handleActive, activeClass } = useActive(0);
-
     const { addItem } = useContext(cartContext);
-
     const { productId } = useParams();
-
-    const product = product_data.find(item => item.id === productId) || {}; // ✅ Always ensure product is an object
-
-    const [previewImg, setPreviewImg] = useState(product.images?.[0] || '');
     
+    const [product, setProduct] = useState(null);
+    const [previewImg, setPreviewImg] = useState('');
+    const [loading, setLoading] = useState(true);  // Loading state for async data fetching
+
     useEffect(() => {
-        if (product.images?.length) {
-            setPreviewImg(product.images[0]);
-            handleActive(0);
-        setPreviewImg(images[0]);
+        const fetchProductData = async () => {
+            try {
+                setLoading(true);  // Start loading
+                const response = await axios.get(`${process.env.REACT_APP_API_URI}/product/products/${productId}`);
+                console.log(response.data);  // Log the response to check the data structure
+                if (response.data.success) {
+                    setProduct(response.data.data);  // Set product data from `data`
+                    setPreviewImg(response.data.data.images?.[0] || '');  // Set the first image as preview
+                } else {
+                    console.error("Error: Product not found");
+                }
+            } catch (error) {
+                console.error('Error fetching product data:', error);
+            } finally {
+                setLoading(false);  // End loading
+            }
+        };
 
-        }
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [product.images]); // ✅ Using `product.images` directly instead of re-setting `images`
-    
+        fetchProductData();  // Fetch product data on component mount
+    }, [productId]);
+
     // ✅ Conditional return AFTER all hooks execute
-    if (!product.id) {
+    if (loading) {
+        return <h2>Loading...</h2>;
+    }
+
+    if (!product) {
         return <h2>Product not found</h2>;
     }
-    
-    const { images = [], name, description, category, prices = [], ratings, rateCount } = product;
-    
 
-    // handling Add-to-cart
+    const { images = [], name, description, category, prices = [], brand } = product;
+
+    // Handling Add-to-cart
     const handleAddItem = () => {
         addItem(product);
     };
 
-
-  
-
-    // handling Preview image
+    // Handling Preview image
     const handlePreviewImg = (i) => {
         setPreviewImg(images[i]);
         handleActive(i);
     };
 
-
-    // calculating Prices
-    const discountedPrice = prices[0] - prices[2];
-    const newPrice = displayMoney(prices[2]);
-    const oldPrice = displayMoney(prices[0]);
+    // Calculating Prices
+    const newPrice = displayMoney(prices[0]);  // Assuming prices[0] is the current price
+    const oldPrice = prices.length > 1 ? displayMoney(prices[1]) : null;  // If there's an old price
+    const discountedPrice = oldPrice ? prices[0] - prices[1] : 0;
     const savedPrice = displayMoney(discountedPrice);
-    const savedDiscount = calculateDiscount(discountedPrice, prices[0]);
-
+    const savedDiscount = oldPrice ? calculateDiscount(discountedPrice, prices[0]) : null;
 
     return (
         <>
@@ -96,42 +102,35 @@ const ProductDetails = () => {
 
                         {/*=== Product Details Right-content ===*/}
                         <div className="prod_details_right_col">
-                            <h1 className="prod_details_title">{name}</h1>
-                            <h4 className="prod_details_info">{description}</h4>
-
+                            <h1 className="prod_details_title">{name || 'Loading...'}</h1>
+                            <h4 className="prod_details_info">{description || 'No description available'}</h4>
+                            <h5 className="prod_details_brand">Brand: {brand || 'N/A'}</h5>
 
                             <div className="separator"></div>
 
                            
 
-
                             <div className="prod_details_offers">
-                                {/* <h4>Offers and Discounts</h4>
-                                <ul>
-                                    <li>No Cost EMI on Credit Card</li>
-                                    <li>Pay Later & Avail Cashback</li>
-                                </ul> */}
-                                <Graph/>
-
+                                <Graph /> {/* Graph component */}
                             </div>
 
-                          
-
+                            {/* Add-to-cart Button */}
+                            <button onClick={handleAddItem} className="prod_details_add_to_cart">Add to Cart</button>
                         </div>
                     </div>
                 </div>
             </section>
 
-            <ProductSummary {...product} />
+            <ProductSummary {...product} /> {/* Product Summary component */}
 
             <section id="related_products" className="section">
                 <div className="container">
-                    <SectionsHead heading="Related Products" />
-                    <RelatedSlider category={category} />
+                    <SectionsHead heading="Related Products" /> {/* Section Head component */}
+                    <RelatedSlider category={category} /> {/* Related Products Slider */}
                 </div>
             </section>
 
-            <Services />
+            <Services /> {/* Services component */}
         </>
     );
 };
