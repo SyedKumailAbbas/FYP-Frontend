@@ -15,23 +15,25 @@ import { db } from "./firebase-config";
 
 // 1. Add a review
 export const addreview = async (userId, username, productId, review) => {
-    try {
-        const reviewsRef = collection(db, "reviews");
-        const reviewData = {
-            userId,
-            username,
-            productId,
-            review,
-            createdAt: Timestamp.now(),
-            updatedAt: Timestamp.now()
-        };
-        const docRef = await addDoc(reviewsRef, reviewData);
-        return docRef.id;
-    } catch (error) {
-        console.error("Failed to add review:", error.message);
-        throw error;
-    }
+  try {
+      const reviewsRef = collection(db, "reviews");
+      const reviewData = {
+          userId,
+          username,
+          productId,
+          review, // Only the review comment
+          createdAt: Timestamp.now(),
+          updatedAt: Timestamp.now()
+      };
+      const docRef = await addDoc(reviewsRef, reviewData);
+      return docRef.id;
+  } catch (error) {
+      console.error("Failed to add review:", error.message);
+      throw error;
+  }
 };
+
+
 
 // 2. Edit a review
 export const editreview = async (reviewId, newreview) => {

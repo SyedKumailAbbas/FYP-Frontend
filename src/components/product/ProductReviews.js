@@ -1,47 +1,63 @@
 import React, { useState } from 'react';
-import { IoMdStar } from 'react-icons/io';
 
-const ProductReviews = ({ name, date, review, rateCount, onDelete, onEdit }) => {
-  const [isEditing, setIsEditing] = useState(false);
-  const [editedReview, setEditedReview] = useState(review);
+const ProductReviews = ({ id, userId, username, review, date, onDelete, onEdit }) => {
+  const [editing, setEditing] = useState(false);
+  const [editText, setEditText] = useState(review);
 
   const handleSave = () => {
-    if (onEdit) onEdit(editedReview);
-    setIsEditing(false);
+    if (editText.trim()) {
+      onEdit(editText);
+      setEditing(false);
+    }
   };
 
   return (
-    <li>
-      <div className="user_info">
-        <img src="https://www.pngitem.com/pimgs/m/150-1503945_transparent-user-png-default-user-image-png-png.png" alt="user-img" />
-        <div>
-          <h4>{name}</h4>
-          <div className="user_ratings">
-            <span className="rating_star">
-              {[...Array(rateCount)].map((_, i) => <IoMdStar key={i} />)}
-            </span>
-            <span>|</span>
-            <span className="date">
-              {date?.seconds ? new Date(date.seconds * 1000).toLocaleDateString() : 'Just now'}
-            </span>
-          </div>
-        </div>
+    <li className="border-b border-gray-200 py-4">
+      <div className="flex justify-between items-center mb-1">
+        <span className="text-sm font-semibold text-blue-600">@{username}</span>
+        <span className="text-xs text-gray-500">{new Date(date).toLocaleString()}</span>
       </div>
 
-      {isEditing ? (
-        <>
-          <textarea value={editedReview} onChange={e => setEditedReview(e.target.value)} />
-          <button onClick={handleSave}>Save</button>
-          <button onClick={() => setIsEditing(false)}>Cancel</button>
-        </>
+      {editing ? (
+        <div className="flex flex-col gap-2 mt-2">
+          <textarea
+            className="w-full p-2 border rounded"
+            value={editText}
+            onChange={(e) => setEditText(e.target.value)}
+          />
+          <div className="flex gap-2">
+            <button
+              onClick={handleSave}
+              className="px-3 py-1 text-sm bg-green-500 text-white rounded hover:bg-green-600"
+            >
+              Save
+            </button>
+            <button
+              onClick={() => setEditing(false)}
+              className="px-3 py-1 text-sm bg-gray-400 text-white rounded hover:bg-gray-500"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
       ) : (
-        <p className="user_review">{review}</p>
+        <div className="text-white text-sm mt-1">{review}</div>
       )}
 
-      {onDelete && (
-        <div className="review_actions">
-          <button onClick={() => setIsEditing(true)}>Edit</button>
-          <button onClick={onDelete}>Delete</button>
+      {onDelete && !editing && (
+        <div className="flex gap-2 mt-2">
+          <button
+            onClick={() => setEditing(true)}
+            className="px-2 py-1 text-xs bg-yellow-500 text-white rounded hover:bg-yellow-600"
+          >
+            Edit
+          </button>
+          <button
+            onClick={onDelete}
+            className="px-2 py-1 text-xs bg-red-500 text-white rounded hover:bg-red-600"
+          >
+            Delete
+          </button>
         </div>
       )}
     </li>

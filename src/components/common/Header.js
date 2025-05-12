@@ -50,7 +50,7 @@ const Header = () => {
                             </div>
 
                             <div className="cart_action">
-                                <Link to="/cart">
+                                <Link to="/wishlist">
                                     <AiOutlineHeart />
                                     {
                                         cartQuantity > 0 && (

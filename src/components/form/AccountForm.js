@@ -36,10 +36,9 @@ const AccountForm = () => {
     
         try {
             if (isSignupVisible) {
-                if (password !== conf_password) {
-                    alert("Passwords do not match!");
-                    return;
-                }
+               if (password !== conf_password) {
+    throw new Error("Passwords do not match!");
+}
     
                 await createNewUser(mail, password, username);
                 alert("Signup successful!");

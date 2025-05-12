@@ -10,17 +10,18 @@ import {
 } from '../../firebase/review';
 
 const ProductSummary = (props) => {
-  const { brand, name, description, category, prices, urls, productId } = props;
+  const {_id, brand, name, description, category, prices, urls } = props;
   const { active, handleActive, activeClass } = useActive('price');
   const { currentUser, username, userLoggedIn } = useAuth();
-
+const productId= _id
   const [reviews, setReviews] = useState([]);
   const [newReview, setNewReview] = useState('');
   const [rateCount, setRateCount] = useState(5);
 
   const userInfo = currentUser
-    ? { id: currentUser.uid, name: username }
-    : null;
+  ? { id: currentUser.uid, name: currentUser.displayName || 'Anonymous' }
+  : null;
+
 
   const data = urls.map((u, index) => ({
     col1: u.websiteName,
@@ -40,30 +41,26 @@ const ProductSummary = (props) => {
     fetchReviews();
   }, [productId]);
 
-  const handleAddReview = async () => {
-    if (!newReview.trim()) return;
-    try {
-      const id = await addreview(userInfo.id, userInfo.name, productId, {
-        review: newReview,
-        rateCount,
-      });
-      setReviews(prev => [
-        ...prev,
-        {
-          id,
-          userId: userInfo.id,
-          username: userInfo.name,
-          review: newReview,
-          rateCount,
-          createdAt: new Date(),
-        },
-      ]);
-      setNewReview('');
-      setRateCount(5);
-    } catch (err) {
-      console.error("Add review failed:", err);
-    }
-  };
+ const handleAddReview = async () => {
+  if (!newReview.trim()) return;
+  try {
+    const id = await addreview(userInfo.id, userInfo.name, productId, newReview);  // Only send the review text
+    setReviews(prev => [
+      ...prev,
+      {
+        id,
+        userId: userInfo.id,
+        username: userInfo.name,
+        review: newReview, // Just the review comment
+        createdAt: new Date(),
+      },
+    ]);
+    setNewReview('');  // Reset the review textarea
+  } catch (err) {
+    console.error("Add review failed:", err);
+  }
+};
+
 
   const handleDelete = async (id) => {
     try {
@@ -153,22 +150,15 @@ const ProductSummary = (props) => {
               </ul>
 
               {userLoggedIn && (
-                <div className="review_input_form">
-                  <textarea
-                    placeholder="Write your review..."
-                    value={newReview}
-                    onChange={(e) => setNewReview(e.target.value)}
-                  />
-                  <div>
-                    <label>Rating:</label>
-                    <select value={rateCount} onChange={e => setRateCount(Number(e.target.value))}>
-                      {[1, 2, 3, 4, 5].map(r => (
-                        <option key={r} value={r}>{r}</option>
-                      ))}
-                    </select>
-                  </div>
-                  <button onClick={handleAddReview}>Submit Review</button>
-                </div>
+             <div className="review_input_form">
+  <textarea
+    placeholder="Write your review..."
+    value={newReview}
+    onChange={(e) => setNewReview(e.target.value)}
+  />
+  <button onClick={handleAddReview}>Submit Review</button>
+</div>
+
               )}
             </div>
           )}
