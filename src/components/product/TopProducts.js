@@ -13,10 +13,9 @@ const TopProducts = () => {
 
     // making a unique set of product's category
     const productsCategory = [
-        'All',
-       'Laptops',
-       'Mobiles',
-       'TVs'
+       
+     
+       
     ];
 
     // handling product's filtering

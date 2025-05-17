@@ -25,7 +25,7 @@ const ProductDetails = () => {
   const { addItem } = useContext(cartContext);
   const { productId } = useParams();
   const { userLoggedIn, currentUser } = useAuth();
-
+  const [ data, setData ] = useState(null)
   const [product, setProduct] = useState(null);
   const [previewImg, setPreviewImg] = useState('');
   const [loading, setLoading] = useState(true);
@@ -40,8 +40,11 @@ const ProductDetails = () => {
         setLoading(true);
         const response = await axios.get(`${process.env.REACT_APP_API_URI}/product/products/${productId}`);
         if (response.data.success) {
-          setProduct(response.data.data);
-          setPreviewImg(response.data.data.images?.[0] || '');
+          setProduct(response.data.data.product);
+          setData(response.data.data.predictive_price)
+          setPreviewImg(response.data.data.product.images?.[0] || '');
+          console.log(data)
+          console.log(product)
         } else {
           console.error("Error: Product not found");
         }
@@ -107,7 +110,7 @@ const ProductDetails = () => {
   if (loading) return <h2>Loading...</h2>;
   if (!product) return <h2>Product not found</h2>;
 
-  const newPrice = displayMoney(product.prices[0]);
+  const newPrice = displayMoney(product?.prices[0]);
   const oldPrice = product.prices.length > 1 ? displayMoney(product.prices[1]) : null;
   const discountedPrice = oldPrice ? product.prices[0] - product.prices[1] : 0;
   const savedPrice = displayMoney(discountedPrice);
@@ -144,27 +147,27 @@ const ProductDetails = () => {
               <div className="separator"></div>
 
               <div className="prod_details_offers">
-                <Graph />
+                {/* <Graph /> */}
+                <Graph prices1={product.priceHistory} prices2={data.priceHistory} />
+
               </div>
 
-              <button onClick={handleAddItem} className="prod_details_add_to_cart">
-                Add to Cart
-              </button>
+
 
               <div className="prod_details_wishlist">
                 <Heart
-  isActive={isWishlisted}
-  onClick={handleWishlistToggle}
-  animationTrigger="both"
-  inactiveColor="rgba(255,125,125,.75)"
-  activeColor="#e019ae"
-  animationDuration={0.1}
-  style={{
-    width: '24px',  // Adjust width
-    height: '24px', // Adjust height
-    marginTop: '1rem',
-  }}
-/>
+                  isActive={isWishlisted}
+                  onClick={handleWishlistToggle}
+                  animationTrigger="both"
+                  inactiveColor="rgba(255,125,125,.75)"
+                  activeColor="#e019ae"
+                  animationDuration={0.1}
+                  style={{
+                    width: '24px',  // Adjust width
+                    height: '24px', // Adjust height
+                    marginTop: '1rem',
+                  }}
+                />
 
                 {showLoginPrompt && (
                   <div className="login-prompt">Please log in to add to wishlist.</div>

@@ -10,7 +10,7 @@ import {
 } from '../../firebase/review';
 
 const ProductSummary = (props) => {
-  const {_id, brand, name, description, category, prices, urls } = props;
+  const {_id, brand, name, specifications, category, prices, urls } = props;
   const { active, handleActive, activeClass } = useActive('price');
   const { currentUser, username, userLoggedIn } = useAuth();
 const productId= _id
@@ -87,7 +87,6 @@ const productId= _id
           <ul className="tabs">
             <li className={`tabs_item ${activeClass('price')}`} onClick={() => handleActive('price')}>Price</li>
             <li className={`tabs_item ${activeClass('specs')}`} onClick={() => handleActive('specs')}>Specifications</li>
-            <li className={`tabs_item ${activeClass('overview')}`} onClick={() => handleActive('overview')}>Overview</li>
             <li className={`tabs_item ${activeClass('reviews')}`} onClick={() => handleActive('reviews')}>Reviews</li>
           </ul>
         </div>
@@ -117,25 +116,15 @@ const productId= _id
           ) : active === 'specs' ? (
             <div className="prod_specs">
               <ul>
-                <li><span>Brand</span><span>{brand}</span></li>
-                <li><span>Model</span><span>{name}</span></li>
-                <li><span>Generic Name</span><span>{category}</span></li>
+                <li><span>Brand</span><span>{specifications.Brand}</span></li>
+                <li><span>Processor</span><span>{specifications.Processor}</span></li>
+                <li><span>Generation</span><span>{specifications.Generation}</span></li>
+                <li><span>Ram</span><span>{specifications.Ram}</span></li>
+                <li><span>SSD</span><span>{specifications.SSD}</span></li>
+
               </ul>
             </div>
-          ) : active === 'overview' ? (
-            <div className="prod_overview">
-              <h3>The <span>{name}</span> {description} provides fabulous sound quality</h3>
-              <ul>
-                <li>Sound Tuned to Perfection</li>
-                <li>Comfortable to Wear</li>
-                <li>Long Hours Playback Time</li>
-              </ul>
-              <p>
-                Buy the <b>{name} {description}</b> which offers an amazing music experience with premium sound quality.
-                Enjoy flexibility and mobility with these {category}, blending exceptional sound with smart features.
-              </p>
-            </div>
-          ) : (
+          )  : (
             <div className="prod_reviews">
               <ul>
                 {reviews.map(item => (
@@ -156,7 +145,7 @@ const productId= _id
     value={newReview}
     onChange={(e) => setNewReview(e.target.value)}
   />
-  <button onClick={handleAddReview}>Submit Review</button>
+  <button className='btn bg-red-400' onClick={handleAddReview}>Submit Review</button>
 </div>
 
               )}

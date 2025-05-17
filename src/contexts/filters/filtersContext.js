@@ -1,241 +1,303 @@
 import axios from 'axios';
-import { createContext, useEffect, useReducer } from 'react';
+import { createContext, useEffect, useReducer, useState } from 'react';
 import { brandsMenu, categoryMenu } from '../../data/filterBarData';
 import filtersReducer from './filtersReducer';
 
-// Filters-Context
 const filtersContext = createContext();
 
-// Initial State
 const initialState = {
-    allProducts: [],
-    loading: true, // Start with loading as true
-    sortedValue: null,
-    updatedBrandsMenu: brandsMenu,
-    updatedCategoryMenu: categoryMenu,
-    selectedPrice: {
-        price: 0,
-        minPrice: 0,
-        maxPrice: 0
-    },
-    mobFilterBar: {
-        isMobSortVisible: false,
-        isMobFilterVisible: false,
-    },
+  allProducts: [],
+  loading: true,
+  sortedValue: null,
+  updatedBrandsMenu: brandsMenu,
+  updatedCategoryMenu: categoryMenu,
+  selectedPrice: {
+    price: 0,
+    minPrice: 0,
+    maxPrice: 0,
+  },
+  mobFilterBar: {
+    isMobSortVisible: false,
+    isMobFilterVisible: false,
+  },
+  filteredProducts: [],
 };
 
-// Filters-Provider Component
 const FiltersProvider = ({ children }) => {
-    const [state, dispatch] = useReducer(filtersReducer, initialState);
+  const [state, dispatch] = useReducer(filtersReducer, initialState);
 
-    const apiUrl = process.env.REACT_APP_API_URI;
+  // Multi-select filter states
+  const [selectedBrands, setSelectedBrands] = useState([]);
+  const [selectedRAM, setSelectedRAM] = useState([]);
+  const [selectedProcessors, setSelectedProcessors] = useState([]);
+  const [selectedSSD, setSelectedSSD] = useState([]);
+  const [selectedGeneration, setSelectedGeneration] = useState([]);
 
-    // Function to fetch products
-    const fetchProducts = async () => {
-        try {
-            // Axios request to fetch products from the backend
-            const response = await axios.get(`${apiUrl}/product/products`);
-            const data = response.data;
+  const [queryString, setQueryString] = useState('');
 
-            console.log("Fetched Data:", data); // Check if data is fetched correctly
+  const apiUrl = process.env.REACT_APP_API_URI;
 
-            if (data && Array.isArray(data.data)) { // Ensure we're accessing the correct part of the response
-                const products = data.data.map(item => ({
-                    id: item._id,  // Renaming _id to id
-                    name: item.name,
-                    category: item.category,
-                    brand: item.specifications.brand,
-                    prices: item.prices || [],  // Ensure prices is always an array
-                    finalPrice: Math.min(...(item.prices || [0])),  // Calculate finalPrice from the prices array
-                    urls: item.urls.map(url => ({
-                        websiteName: url.websiteName,
-                        url: url.url,
-                        lastUpdated: url.lastUpdated,
-                    })) || [],
-                    images: item.images || [],  // Ensure images is an array
-                    description: item.description || "",  // Default to an empty string if missing
-                    specifications: item.specifications || {},
-                    createdAt: item.createdAt || "",
-                    updatedAt: item.updatedAt || "",
-                }));
+  const buildQueryString = () => {
+    const params = new URLSearchParams();
 
-                const priceArr = products.map(item => item.finalPrice);
-                const minPrice = Math.min(...priceArr);
-                const maxPrice = Math.max(...priceArr);
+    // Always append minPrice = 0 as requested
+    params.append('minPrice', 0);
 
-                console.log("Transformed Products:", products); // Log transformed data
+    // Append maxPrice from state, fallback to 100000
+    params.append('maxPrice', state.selectedPrice.maxPrice || 10000000);
 
-                // Dispatch the action to load products into the state
-                dispatch({
-                    type: 'LOAD_ALL_PRODUCTS',
-                    payload: { products, minPrice, maxPrice }
-                });
+    if (selectedBrands.length > 0) params.append('brand', selectedBrands.join(','));
 
-                // Dispatch SET_LOADING to set loading to false
-                dispatch({
-                    type: 'SET_LOADING',
-                    payload: { loading: false } // Set loading to false here
-                });
-            }
-        } catch (error) {
-            // Handle error gracefully
-            console.error("Error fetching products:", error.response ? error.response.data : error.message);
-            // Set loading to false in case of an error
-            dispatch({
-                type: 'SET_LOADING',
-                payload: { loading: false }
-            });
-        }
-    };
+    const specs = {};
+    if (selectedRAM.length > 0) specs.ram = selectedRAM.join(',');
+    if (selectedProcessors.length > 0) specs.processor = selectedProcessors.join(',');
+    if (selectedSSD.length > 0) specs.ssd = selectedSSD.join(',');
+    if (selectedGeneration.length > 0) specs.generation = selectedGeneration.join(',');
 
-    /* Loading All Products on the initial render */
-    useEffect(() => {
-        fetchProducts();
-    }, [apiUrl]);  // Ensure fetch runs only once
+    if (Object.keys(specs).length > 0) {
+      params.append('specifications', JSON.stringify(specs));
+    }
 
-    /* function for applying Filters - (sorting & filtering) */
-    const applyFilters = () => {
-        let updatedProducts = state.allProducts.map(item => ({
-            ...item,
-            finalPrice: Math.min(...item.prices) // Ensure finalPrice is always set correctly
+    return `?${params.toString()}`;
+  };
+
+  // Update query string on any filter change
+  useEffect(() => {
+    const qs = buildQueryString();
+    setQueryString(qs);
+  }, [
+    selectedBrands,
+    selectedRAM,
+    selectedProcessors,
+    selectedSSD,
+    selectedGeneration,
+    state.selectedPrice.maxPrice, // maxPrice matters for query string
+  ]);
+
+  // Fetch products when queryString changes
+  const fetchProducts = async () => {
+    try {
+      if (!queryString) return;
+
+      console.log('Fetching products with query:', queryString);
+
+      const response = await axios.get(`${apiUrl}/product/filterproduct/filter${queryString}`);
+      const data = response.data;
+
+      if (data && Array.isArray(data.data)) {
+        const products = data.data.map(item => ({
+          id: item._id,
+          name: item.name,
+          category: item.category,
+          brand: item.specifications.brand,
+          prices: item.prices || [],
+          finalPrice: Math.min(...(item.prices || [0])),
+          urls: item.urls || [],
+          images: item.images || [],
+          description: item.description || '',
+          specifications: item.specifications || {},
+          createdAt: item.createdAt || '',
+          updatedAt: item.updatedAt || '',
         }));
 
-        /*==== Sorting ====*/
-        if (state.sortedValue) {
-            switch (state.sortedValue) {
-                case 'Latest':
-                    updatedProducts = updatedProducts.slice(0, 6);
-                    break;
-
-                case 'Featured':
-                    updatedProducts = updatedProducts.filter(item => item.tag === 'featured-product');
-                    break;
-
-                case 'Top Rated':
-                    updatedProducts = updatedProducts.filter(item => item.rateCount > 4);
-                    break;
-
-                case 'Price(Lowest First)':
-                    updatedProducts = updatedProducts.sort((a, b) => Math.min(...a.prices) - Math.min(...b.prices));
-                    break;
-
-                case 'Price(Highest First)':
-                    updatedProducts = updatedProducts.sort((a, b) => Math.max(...b.prices) - Math.max(...a.prices));
-                    break;
-
-                default:
-                    throw new Error('Wrong Option Selected');
-            }
-        }
-
-        /*==== Filtering ====*/
-
-        // Filter by Brands
-        const checkedBrandItems = state.updatedBrandsMenu
-            .filter(item => item.checked)
-            .map(item => item.label.toLowerCase());
-
-        if (checkedBrandItems.length) {
-
-            updatedProducts = updatedProducts.filter(item => {
-                // Check if item.specifications.brand is defined and not empty
-                const brand = item.specifications.brand ? item.specifications.brand.toLowerCase() : '';
-                return checkedBrandItems.includes(brand);
-            });        }
-
-        // Filter by Category
-        const checkedCategoryItems = state.updatedCategoryMenu
-            .filter(item => item.checked)
-            .map(item => item.label.toLowerCase());
-
-        if (checkedCategoryItems.length) {
-            updatedProducts = updatedProducts.filter(item => checkedCategoryItems.includes(item.category.toLowerCase()));
-        }
-
-        // Filter by Price
-        if (state.selectedPrice) {
-            updatedProducts = updatedProducts.filter(item => Math.min(...item.prices) <= state.selectedPrice.price);
-        }
+        const priceArr = products.map(p => p.finalPrice);
+        const minPrice = 0; // Always zero
+        const maxPrice = Math.max(...priceArr);
 
         dispatch({
-            type: 'FILTERED_PRODUCTS',
-            payload: { updatedProducts }
+          type: 'LOAD_ALL_PRODUCTS',
+          payload: { products, minPrice, maxPrice },
         });
-    };
 
-    useEffect(() => {
-        applyFilters();
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [state.sortedValue, state.updatedBrandsMenu, state.updatedCategoryMenu, state.selectedPrice]);
-
-    // Dispatched Actions
-    const setSortedValue = (sortValue) => {
-        return dispatch({
-            type: 'SET_SORTED_VALUE',
-            payload: { sortValue }
+        dispatch({
+          type: 'FILTERED_PRODUCTS',
+          payload: { updatedProducts: products },
         });
-    };
 
-    const handleBrandsMenu = (id) => {
-        return dispatch({
-            type: 'CHECK_BRANDS_MENU',
-            payload: { id }
+        dispatch({
+          type: 'SET_LOADING',
+          payload: { loading: false },
         });
-    };
 
-    const handleCategoryMenu = (id) => {
-        return dispatch({
-            type: 'CHECK_CATEGORY_MENU',
-            payload: { id }
+        // Reset price filter to maxPrice on load
+        dispatch({
+          type: 'HANDLE_PRICE',
+          payload: { value: maxPrice },
         });
-    };
+      }
+    } catch (error) {
+      console.error('Error fetching filtered products:', error.response?.data || error.message);
+      dispatch({
+        type: 'SET_LOADING',
+        payload: { loading: false },
+      });
+    }
+  };
 
-    const handlePrice = (event) => {
-        const value = event.target.value;
-        return dispatch({
-            type: 'HANDLE_PRICE',
-            payload: { value }
-        });
-    };
+  useEffect(() => {
+    fetchProducts();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [queryString]);
 
-    const handleMobSortVisibility = (toggle) => {
-        return dispatch({
-            type: 'MOB_SORT_VISIBILITY',
-            payload: { toggle }
-        });
-    };
+  const applyFilters = () => {
+    let updatedProducts = [...state.allProducts];
 
-    const handleMobFilterVisibility = (toggle) => {
-        return dispatch({
-            type: 'MOB_FILTER_VISIBILITY',
-            payload: { toggle }
-        });
-    };
+    if (state.sortedValue) {
+      switch (state.sortedValue) {
+        case 'Latest':
+          updatedProducts = updatedProducts.slice(0, 6);
+          break;
+        case 'Featured':
+          updatedProducts = updatedProducts.filter(item => item.tag === 'featured-product');
+          break;
+        case 'Top Rated':
+          updatedProducts = updatedProducts.filter(item => item.rateCount > 4);
+          break;
+        case 'Price(Lowest First)':
+          updatedProducts = updatedProducts.sort((a, b) => a.finalPrice - b.finalPrice);
+          break;
+        case 'Price(Highest First)':
+          updatedProducts = updatedProducts.sort((a, b) => b.finalPrice - a.finalPrice);
+          break;
+        default:
+          break;
+      }
+    }
 
-    const handleClearFilters = () => {
-        return dispatch({
-            type: 'CLEAR_FILTERS'
-        });
-    };
+    const checkedCategoryItems = state.updatedCategoryMenu
+      .filter(item => item.checked)
+      .map(item => item.label.toLowerCase());
 
-    // Context values
-    const values = {
-        ...state,
-        setSortedValue,
-        handleBrandsMenu,
-        handleCategoryMenu,
-        handlePrice,
-        handleMobSortVisibility,
-        handleMobFilterVisibility,
-        handleClearFilters,
-        fetchProducts, // Make sure to include fetchProducts in context
-    };
+    if (checkedCategoryItems.length > 0) {
+      updatedProducts = updatedProducts.filter(item =>
+        checkedCategoryItems.includes(item.category.toLowerCase())
+      );
+    }
 
-    return (
-        <filtersContext.Provider value={values}>
-            {children}
-        </filtersContext.Provider>
-    );
+    if (state.selectedPrice.price) {
+      updatedProducts = updatedProducts.filter(item => item.finalPrice <= state.selectedPrice.price);
+    }
+
+    dispatch({
+      type: 'FILTERED_PRODUCTS',
+      payload: { updatedProducts },
+    });
+  };
+
+  useEffect(() => {
+    applyFilters();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [state.sortedValue, state.updatedCategoryMenu, state.selectedPrice]);
+
+  // New function to set products directly from search
+  const setProductsFromSearch = (products) => {
+    const mappedProducts = products.map(item => ({
+      id: item._id,
+      name: item.name,
+      category: item.category,
+      brand: item.specifications.brand,
+      prices: item.prices || [],
+      finalPrice: Math.min(...(item.prices || [0])),
+      urls: item.urls || [],
+      images: item.images || [],
+      description: item.description || '',
+      specifications: item.specifications || {},
+      createdAt: item.createdAt || '',
+      updatedAt: item.updatedAt || '',
+    }));
+
+    const priceArr = mappedProducts.map(p => p.finalPrice);
+    const maxPrice = priceArr.length > 0 ? Math.max(...priceArr) : 100000;
+
+    dispatch({
+      type: 'LOAD_ALL_PRODUCTS',
+      payload: { products: mappedProducts, minPrice: 0, maxPrice },
+    });
+
+    dispatch({
+      type: 'FILTERED_PRODUCTS',
+      payload: { updatedProducts: mappedProducts },
+    });
+
+    dispatch({
+      type: 'HANDLE_PRICE',
+      payload: { value: maxPrice },
+    });
+
+    dispatch({
+      type: 'SET_LOADING',
+      payload: { loading: false },
+    });
+  };
+
+  // Dispatchers
+  const setSortedValue = sortValue =>
+    dispatch({ type: 'SET_SORTED_VALUE', payload: { sortValue } });
+
+  const handleBrandsMenu = newBrands => setSelectedBrands(newBrands);
+  const handleRAMMenu = newRAM => setSelectedRAM(newRAM);
+  const handleProcessorMenu = newProcessors => setSelectedProcessors(newProcessors);
+  const handleSSDMenu = newSSD => setSelectedSSD(newSSD);
+  const handleGenerationMenu = newGeneration => setSelectedGeneration(newGeneration);
+
+  const handleCategoryMenu = id =>
+    dispatch({ type: 'CHECK_CATEGORY_MENU', payload: { id } });
+
+  const handlePrice = event => {
+    const value = event.target.value;
+    dispatch({ type: 'HANDLE_PRICE', payload: { value } });
+  };
+
+  const handleMobSortVisibility = toggle =>
+    dispatch({ type: 'MOB_SORT_VISIBILITY', payload: { toggle } });
+
+  const handleMobFilterVisibility = toggle =>
+    dispatch({ type: 'MOB_FILTER_VISIBILITY', payload: { toggle } });
+
+  const handleClearFilters = () => {
+    dispatch({ type: 'CLEAR_FILTERS' });
+
+    setSelectedBrands([]);
+    setSelectedRAM([]);
+    setSelectedProcessors([]);
+    setSelectedSSD([]);
+    setSelectedGeneration([]);
+
+    // Reset price to maxPrice (or default 100000 if missing)
+    dispatch({
+      type: 'HANDLE_PRICE',
+      payload: { value: state.selectedPrice.maxPrice || 100000 },
+    });
+  };
+
+  const values = {
+    ...state,
+    setSortedValue,
+    handleBrandsMenu,
+    handleRAMMenu,
+    handleProcessorMenu,
+    handleSSDMenu,
+    handleGenerationMenu,
+    handleCategoryMenu,
+    handlePrice,
+    handleMobSortVisibility,
+    handleMobFilterVisibility,
+    handleClearFilters,
+    queryString,
+    fetchProducts,
+    selectedBrands,
+    selectedRAM,
+    selectedProcessors,
+    selectedSSD,
+    selectedGeneration,
+    setProductsFromSearch,  // <-- added here
+  };
+
+  return (
+    <filtersContext.Provider value={values}>
+      {children}
+    </filtersContext.Provider>
+  );
 };
 
 export default filtersContext;

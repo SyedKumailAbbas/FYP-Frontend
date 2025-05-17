@@ -7,19 +7,12 @@ import useActive from '../../hooks/useActive';
 
 const ProductCard = (props) => {
     // Log props to check if data is passed correctly
-    console.log("ProductCard props:", props);
 
     // Destructure the props object
     const { id, images, name, description, prices, originalPrice, rateCount, path } = props;
 
     // Check if each prop has the correct data
-    console.log("Product ID:", id);
-    console.log("Product Images:", images);
-    console.log("Product Name:", name);
-    console.log("Product Description:", description);
-    console.log("Product Prices:", prices);
-    console.log("Product Original Price:", originalPrice);
-    console.log("Product Rate Count:", rateCount);
+ 
 
     const { addItem } = useContext(cartContext); // Ensure useContext is used correctly
     const { active, handleActive, activeClass } = useActive(false);
